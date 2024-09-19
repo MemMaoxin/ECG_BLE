@@ -1,0 +1,8 @@
+{
+    "manifest": {
+        "application": {
+            "bin_file": "ECG29.bin",
+            "dat_file": "ECG29.dat"
+        }
+    }
+}

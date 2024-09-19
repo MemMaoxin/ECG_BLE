@@ -76,16 +76,16 @@
 #define LEDBUTTON_LED BSP_BOARD_LED_2   /**< LED to be toggled with the help of the LED Button Service. */
 #define LEDBUTTON_BUTTON BSP_BUTTON_0   /**< Button that will trigger the notification event with the LED Button Service */
 
-#define DEVICE_NAME "ImpLYL" /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME "ECG30" /**< Name of device. Will be included in the advertising data. */
 
 #define APP_BLE_OBSERVER_PRIO 3 /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_BLE_CONN_CFG_TAG 1  /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define APP_ADV_INTERVAL 6400                                 /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
+#define APP_ADV_INTERVAL 64                                 /**< The advertising interval (in units of 0.625 ms; this value corresponds to 40 ms). */
 #define APP_ADV_DURATION BLE_GAP_ADV_TIMEOUT_GENERAL_UNLIMITED /**< The advertising time-out (in units of seconds). When set to 0, we will never time out. */
 
-#define MIN_CONN_INTERVAL MSEC_TO_UNITS(10, UNIT_1_25_MS)  /**100< Minimum acceptable connection interval (0.5 seconds). */
-#define MAX_CONN_INTERVAL MSEC_TO_UNITS(15, UNIT_1_25_MS) /**200< Maximum acceptable connection interval (1 second). */
+#define MIN_CONN_INTERVAL MSEC_TO_UNITS(8, UNIT_1_25_MS)  /**100< Minimum acceptable connection interval (0.5 seconds). */
+#define MAX_CONN_INTERVAL MSEC_TO_UNITS(8, UNIT_1_25_MS) /**200< Maximum acceptable connection interval (1 second). */
 #define SLAVE_LATENCY 0                                   /**< Slave latency. */
 #define CONN_SUP_TIMEOUT MSEC_TO_UNITS(4000, UNIT_10_MS)  /**< Connection supervisory time-out (4 seconds). */
 
@@ -368,7 +368,7 @@ static void advertising_start(void)
  * @param[in]   p_context   Unused.
  */
 bool flag_connect = false;
-bool temp_connect = false;
+bool flag_connect_change = false;
 static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 {
     ret_code_t err_code;
@@ -378,7 +378,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
     case BLE_GAP_EVT_CONNECTED:
         NRF_LOG_INFO("Connected");
         flag_connect = true;
-        temp_connect = true;
+        flag_connect_change = true;
         bsp_board_led_on(CONNECTED_LED);
         bsp_board_led_off(ADVERTISING_LED);
         m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -391,7 +391,7 @@ static void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
     case BLE_GAP_EVT_DISCONNECTED:
         NRF_LOG_INFO("Disconnected");
         flag_connect = false;
-        temp_connect = true;
+        flag_connect_change = true;
         bsp_board_led_off(CONNECTED_LED);
         m_conn_handle = BLE_CONN_HANDLE_INVALID;
         err_code = app_button_disable();
@@ -568,6 +568,7 @@ void saadc_init(void)
     err_code = nrf_drv_saadc_channel_init(0, &channel_config);
     APP_ERROR_CHECK(err_code);
 }
+// nrf_saadc_value_t saadc_val = 0;
 static void thi_monitor_handler(void)
 {
 
@@ -652,7 +653,7 @@ int main(void)
     ble_stack_init();
     gap_params_init();
     gatt_init();
-    nrf_gpio_cfg_output(6);
+    // nrf_gpio_cfg_output(6);
     saadc_init();
     timers_init1();
 
@@ -667,17 +668,17 @@ int main(void)
     // Enter main loop.
     for (;;)
     {
-        if (flag_connect == true && temp_connect == true)
+        if (flag_connect == true && flag_connect_change == true)
         {
-					nrf_gpio_pin_set(6);
+						// nrf_gpio_pin_set(6);
             application_timers_start();
-            temp_connect = false;
+            flag_connect_change = false;
         }
-        else if (flag_connect == false && temp_connect == true)
+        else if (flag_connect == false && flag_connect_change == true)
         {
-					nrf_gpio_pin_clear(6);
+						// nrf_gpio_pin_clear(6);
             nrf_drv_timer_disable(&m_timer);
-            temp_connect = false;
+            flag_connect_change = false;
         }
         idle_state_handle();
     }
